@@ -12,7 +12,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <!-- Chosen Palette: Vistalid Vibrant (Vibrant Blue, Soft Grays, Subtle Gradients) -->
-    <!-- Application Structure Plan: A two-panel SPA. The left panel contains a streamlined form for general invoice details (number, date, place), client information, the commercial gesture amount, and an interactive signature pad. The right panel provides a real-time, clean preview of the "Facture / Geste Commercial" document, structured like a standard invoice, now including the drawn signature. The Vistalid logo is prominently positioned in the global header, outside the invoice preview, emphasizing the tool's origin and brand identity. This design prioritizes efficiency and clarity for generating formal financial documents, offering a personalized touch. A download function allows for easy PDF generation. -->
+    <!-- Application Structure Plan: A two-panel SPA. The left panel contains a streamlined form for general invoice details (number, date, place), client information, the commercial gesture amount, and an glamorous interactive signature pad. The right panel provides a real-time, clean preview of the "Facture / Geste Commercial" document, structured like a standard invoice, now including the drawn signature. The Vistalid logo is prominently positioned in the global header, outside the invoice preview, emphasizing the tool's origin and brand identity. This design prioritizes efficiency and clarity for generating formal financial documents, offering a personalized touch. A download function allows for easy PDF generation. -->
     <!-- Visualization & Content Choices: Report Info (invoice template) -> Goal (generate a formal commercial gesture invoice with client signature) -> Presentation (HTML form + live invoice preview div, including a signature canvas) -> Interaction (oninput/onchange events update financial calculations and textual fields in real-time; mouse/touch events enable drawing on signature canvas) -> Justification (Provides a quick, accurate, and visually standard way to create commercial gesture invoices, focusing on financial clarity and adding a personal, verifiable touch via signature) -> Library/Method (Vanilla JS, Tailwind CSS, jsPDF for PDF generation, html2canvas for capturing signature canvas). -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
@@ -65,6 +65,28 @@
             box-shadow: 0 0 0 2px rgba(48, 90, 254, 0.2); /* Subtle blue glow on focus */
         }
 
+        /* Styling for the new section banners */
+        .section-banner {
+            color: #FFFFFF; /* White text for primary banner */
+            padding: 0.75rem 1.5rem; /* py-3 px-6 */
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 600; /* font-semibold */
+            text-align: center;
+            border-radius: 1.5rem; /* Apply rounded corners to all sides */
+            margin-bottom: 1.5rem; /* Increased margin for more white space */
+            position: relative;
+            z-index: 10; /* Ensure it's above the card shadow */
+            box-shadow: 0 5px 15px -5px rgba(0, 0, 0, 0.1); /* Subtle shadow for the banner */
+        }
+        .section-banner.primary {
+            background-color: #305afe; /* Vistalid blue */
+        }
+        .section-banner.secondary {
+            background-color: #EAF2FF; /* Light blue for secondary banner */
+            color: #305afe; /* Vistalid blue text for secondary banner */
+        }
+
+
         @media print {
             body {
                 -webkit-print-color-adjust: exact;
@@ -72,7 +94,7 @@
                 background: none !important; /* Remove background gradients for print */
                 overflow-x: visible !important; /* Allow overflow for printing content */
             }
-            #form-section, #header-section, #actions-section, .section-title-ui { /* Hide UI titles in print */
+            #form-section, #header-section, #actions-section, .section-banner { /* Hide banners in print */
                 display: none !important;
             }
             #preview-section {
@@ -105,6 +127,73 @@
             background-color: #F9FAFB; /* Very light background for signature pad */
             touch-action: none; /* Prevent scrolling on touch devices */
         }
+
+        /* Invoice specific styling for a cleaner look */
+        #preview-document {
+            padding: 2rem 2.5rem; /* Adjusted padding for the invoice content */
+        }
+        #preview-document h2 {
+            font-size: 2rem; /* text-3xl for main title (slightly smaller) */
+            font-weight: 700; /* font-bold */
+            margin-bottom: 1rem;
+        }
+        #preview-document p.text-center {
+            font-size: 1rem; /* text-base for invoice number (slightly smaller) */
+            margin-bottom: 1.5rem; /* Adjusted space below invoice number */
+        }
+        #preview-document hr {
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-top: 1px solid #E0E7EB; /* Lighter, more subtle divider */
+        }
+        #preview-document .grid {
+            margin-bottom: 1.5rem; /* Adjusted space below VISTALID/Date section */
+        }
+        #preview-document h3 {
+            font-size: 1.125rem; /* text-lg for sub-headings (slightly smaller) */
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+        #preview-document .text-sm {
+            font-size: 0.875rem; /* Standard text-sm for general text */
+            line-height: 1.5; /* Better readability */
+        }
+        #preview-document table {
+            margin-top: 2rem; /* Adjusted space above the table */
+            border-radius: 0.75rem; /* Rounded corners for the table */
+            overflow: hidden; /* Ensures rounded corners are visible */
+            border: 1px solid #E0E7EB; /* Light border around the whole table */
+        }
+        #preview-document table thead th {
+            padding: 0.8rem 1.2rem; /* Adjusted padding for table headers */
+            text-align: left;
+            border-bottom: none; /* Remove bottom border from header */
+        }
+        #preview-document table tbody tr {
+            border-bottom: 1px solid #F0F4F8; /* Lighter row dividers */
+        }
+        #preview-document table tbody td {
+            padding: 0.8rem 1.2rem; /* Adjusted padding for table cells */
+        }
+        #preview-document table tfoot tr {
+            background-color: #DDE6FF; /* Total row background */
+            color: #1A3A70;
+            font-size: 1rem; /* text-base for total (slightly smaller) */
+            font-weight: 700;
+        }
+        #preview-document table tfoot td {
+            padding: 1rem 1.2rem; /* Adjusted padding for total row */
+        }
+        #preview-document .text-right.pt-8 {
+            margin-top: 2.5rem; /* Adjusted space before signature block */
+            padding-top: 1.5rem; /* Adjusted padding inside signature block */
+            border-top: 1px solid #E0E7EB; /* Subtle top border for signature */
+        }
+        #preview-document .text-center.pt-6 {
+            margin-top: 2.5rem; /* Adjusted space before footer */
+            font-size: 0.875rem; /* text-sm for footer */
+            color: #8898AA; /* neutral-light for footer */
+        }
     </style>
 </head>
 <body class="bg-stone-100 text-neutral-dark">
@@ -120,173 +209,179 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
             <!-- Form Section -->
-            <section id="form-section" class="bg-card p-6 rounded-2xl shadow-lg">
-                <form id="invoice-form" class="space-y-6">
-                    
-                    <div>
-                        <h2 class="text-xl font-semibold border-b border-divider pb-2 mb-4 text-neutral-dark">Informations de la Facture</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="invoice-number" class="block text-sm font-medium text-neutral-medium">Numéro de Facture *</label>
-                                <input type="text" id="invoice-number" value="FACT-2025-001" class="mt-1 block w-full rounded-md border-card shadow-sm focus:border-vistalid-blue focus:ring-vistalid-blue sm:text-sm p-2" required>
-                                <p class="text-xs text-neutral-lighter mt-1">Ex: FACT-2025-001</p>
-                            </div>
-                            <div>
-                                <label for="issue-date" class="block text-sm font-medium text-neutral-medium">Date d'émission *</label>
-                                <input type="date" id="issue-date" class="mt-1 block w-full rounded-md border-card shadow-sm focus:border-vistalid-blue focus:ring-vistalid-blue sm:text-sm p-2" required>
-                                <p class="text-xs text-neutral-lighter mt-1">La date actuelle est pré-remplie.</p>
-                            </div>
-                             <div>
-                                <label for="issue-place" class="block text-sm font-medium text-neutral-medium">Lieu d'émission *</label>
-                                <input type="text" id="issue-place" placeholder="Ville" class="mt-1 block w-full rounded-md border-card shadow-sm focus:border-vistalid-blue focus:ring-vistalid-blue sm:text-sm p-2" required>
-                                <p class="text-xs text-neutral-lighter mt-1">Indiquez la ville où la facture est émise.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <h2 class="text-xl font-semibold border-b border-divider pb-2 mb-4 text-neutral-dark">Vos Informations Client</h2>
-                        <div class="space-y-4">
-                            <div>
-                                <label for="client-name" class="block text-sm font-medium text-neutral-medium">Votre nom de société *</label>
-                                <input type="text" id="client-name" placeholder="Ex: SARL Dupont & Fils" class="mt-1 block w-full rounded-md border-card shadow-sm focus:border-vistalid-blue focus:ring-vistalid-blue sm:text-sm p-2" required>
-                                <p class="text-xs text-neutral-lighter mt-1">Nom complet de votre entreprise.</p>
-                            </div>
-                            <div>
-                                <label for="client-address" class="block text-sm font-medium text-neutral-medium">Votre adresse complète *</label>
-                                <textarea id="client-address" rows="3" placeholder="Ex: 123 Rue de l'Exemple&#10;75001 Paris" class="mt-1 block w-full rounded-md border-card shadow-sm focus:border-vistalid-blue focus:ring-vistalid-blue sm:text-sm p-2" required></textarea>
-                                <p class="text-xs text-neutral-lighter mt-1">Adresse postale complète de votre entreprise.</p>
-                            </div>
-                            <div>
-                                <label for="client-siret" class="block text-sm font-medium text-neutral-medium">Numéro de Siret *</label>
-                                <input type="text" id="client-siret" placeholder="Ex: 123 456 789 00012" class="mt-1 block w-full rounded-md border-card shadow-sm focus:border-vistalid-blue focus:ring-vistalid-blue sm:text-sm p-2" required>
-                                <p class="text-xs text-neutral-lighter mt-1">Numéro SIRET de votre entreprise.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <h2 class="text-xl font-semibold border-b border-divider pb-2 mb-4 text-neutral-dark">Montant du Geste Commercial</h2>
+            <div class="flex flex-col">
+                <div class="section-banner primary">Remplir le formulaire</div>
+                <section id="form-section" class="bg-card p-6 rounded-2xl shadow-lg flex-1">
+                    <form id="invoice-form" class="space-y-6">
+                        
                         <div>
-                            <label for="amount-ht" class="block text-sm font-medium text-neutral-medium">Montant Hors Taxes *</label>
-                            <div class="relative mt-1 rounded-md shadow-sm">
-                                <input type="number" id="amount-ht" value="100.00" step="0.01" class="block w-full rounded-md border-card pr-12 focus:border-vistalid-blue focus:ring-vistalid-blue sm:text-sm p-2" required>
-                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                                    <span class="text-neutral-lighter sm:text-sm">€</span>
+                            <h3 class="text-xl font-semibold border-b border-divider pb-2 mb-4 text-neutral-dark">Informations de la Facture</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="invoice-number" class="block text-sm font-medium text-neutral-medium">Numéro de Facture *</label>
+                                    <input type="text" id="invoice-number" value="FACT-2025-001" class="mt-1 block w-full rounded-md border-card shadow-sm focus:border-vistalid-blue focus:ring-vistalid-blue sm:text-sm p-2" required>
+                                    <p class="text-xs text-neutral-lighter mt-1">Ex: FACT-2025-001</p>
+                                </div>
+                                <div>
+                                    <label for="issue-date" class="block text-sm font-medium text-neutral-medium">Date d'émission *</label>
+                                    <input type="date" id="issue-date" class="mt-1 block w-full rounded-md border-card shadow-sm focus:border-vistalid-blue focus:ring-vistalid-blue sm:text-sm p-2" required>
+                                    <p class="text-xs text-neutral-lighter mt-1">La date actuelle est pré-remplie.</p>
+                                </div>
+                                 <div>
+                                    <label for="issue-place" class="block text-sm font-medium text-neutral-medium">Lieu d'émission *</label>
+                                    <input type="text" id="issue-place" placeholder="Ville" class="mt-1 block w-full rounded-md border-card shadow-sm focus:border-vistalid-blue focus:ring-vistalid-blue sm:text-sm p-2" required>
+                                    <p class="text-xs text-neutral-lighter mt-1">Indiquez la ville où la facture est émise.</p>
                                 </div>
                             </div>
-                            <p class="text-xs text-neutral-lighter mt-1">Indiquez le montant du geste commercial hors taxes.</p>
                         </div>
-                    </div>
-
-                    <div>
-                        <h2 class="text-xl font-semibold border-b border-divider pb-2 mb-4 text-neutral-dark">Signature du Client</h2>
-                        <div class="space-y-4">
-                            <div>
-                                <label for="signer-name" class="block text-sm font-medium text-neutral-medium">Nom du signataire *</label>
-                                <input type="text" id="signer-name" placeholder="Votre Nom et Prénom" class="mt-1 block w-full rounded-md border-card shadow-sm focus:border-vistalid-blue focus:ring-vistalid-blue sm:text-sm p-2" required>
-                                <p class="text-xs text-neutral-lighter mt-1">Nom complet de la personne qui signe.</p>
-                            </div>
-                            <div>
-                                <label for="signer-title" class="block text-sm font-medium text-neutral-medium">Votre Fonction *</label>
-                                <select id="signer-title" class="mt-1 block w-full rounded-md border-card shadow-sm focus:border-vistalid-blue focus:ring-vistalid-blue sm:text-sm p-2" required>
-                                    <option value="">Sélectionnez une fonction</option>
-                                    <option value="Gérant">Gérant</option>
-                                    <option value="Gérante">Gérante</option>
-                                </select>
-                                <p class="text-xs text-neutral-lighter mt-1">Sélectionnez votre fonction au sein de l'entreprise.</p>
-                            </div>
-                            <div class="border border-divider rounded-md p-2 bg-card">
-                                <label class="block text-sm font-medium text-neutral-medium mb-2">Dessinez votre signature ici : *</label>
-                                <canvas id="signature-pad" class="w-full h-32"></canvas>
-                                <p class="text-xs text-neutral-lighter mt-1">Utilisez votre souris ou votre doigt pour dessiner votre signature.</p>
-                                <button type="button" id="clear-signature" class="mt-2 px-3 py-1 bg-red-500 text-white text-xs font-semibold rounded-md hover:bg-red-600 transition">Effacer la signature</button>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </section>
-
-            <!-- Preview Section -->
-            <section id="preview-section" class="h-full">
-                 <div id="preview-document" class="bg-card p-8 sm:p-10 lg:p-12 rounded-2xl shadow-lg h-full border border-card sticky top-8">
-                    <div class="space-y-6">
-                        
-                        <h2 class="text-2xl font-bold text-neutral-dark text-center">FACTURE / GESTE COMMERCIAL</h2>
-                        <p class="text-neutral-medium font-medium text-center">Numéro : <span id="preview-invoice-number"></span></p>
-
-                        <hr class="my-6 border-divider">
-                        
-                        <div class="grid grid-cols-2 gap-8">
-                            <div>
-                                <h3 class="font-semibold text-neutral-dark">VISTALID</h3>
-                                <p class="text-sm text-neutral-medium mt-1">
-                                    210 COURS VICTOR HUGO<br>
-                                    33130 BEGLES
-                                </p>
-                            </div>
-                            <div class="text-right">
-                                 <p class="text-sm text-neutral-medium"><span class="font-semibold">Date d'émission :</span> <span id="preview-issue-date"></span></p>
-                                 <p class="text-sm text-neutral-medium"><span class="font-semibold">Lieu d'émission :</span> <span id="preview-issue-place"></span></p>
-                            </div>
-                        </div>
-
-                        <hr class="my-6 border-divider">
 
                         <div>
-                            <h3 class="font-semibold text-neutral-dark">CLIENT :</h3>
-                            <div class="mt-1 text-sm text-neutral-medium">
-                                <p id="preview-client-name" class="font-bold"></p>
-                                <p id="preview-client-address" class="whitespace-pre-line"></p>
-                                <p id="preview-client-siret" class="mt-1"></p>
+                            <h3 class="text-xl font-semibold border-b border-divider pb-2 mb-4 text-neutral-dark">Vos Informations Client</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="client-name" class="block text-sm font-medium text-neutral-medium">Votre nom de société *</label>
+                                    <input type="text" id="client-name" placeholder="Ex: SARL Dupont & Fils" class="mt-1 block w-full rounded-md border-card shadow-sm focus:border-vistalid-blue focus:ring-vistalid-blue sm:text-sm p-2" required>
+                                    <p class="text-xs text-neutral-lighter mt-1">Nom complet de votre entreprise.</p>
+                                </div>
+                                <div>
+                                    <label for="client-address" class="block text-sm font-medium text-neutral-medium">Votre adresse complète *</label>
+                                    <textarea id="client-address" rows="3" placeholder="Ex: 123 Rue de l'Exemple&#10;75001 Paris" class="mt-1 block w-full rounded-md border-card shadow-sm focus:border-vistalid-blue focus:ring-vistalid-blue sm:text-sm p-2" required></textarea>
+                                    <p class="text-xs text-neutral-lighter mt-1">Adresse postale complète de votre entreprise.</p>
+                                </div>
+                                <div>
+                                    <label for="client-siret" class="block text-sm font-medium text-neutral-medium">Numéro de Siret *</label>
+                                    <input type="text" id="client-siret" placeholder="Ex: 123 456 789 00012" class="mt-1 block w-full rounded-md border-card shadow-sm focus:border-vistalid-blue focus:ring-vistalid-blue sm:text-sm p-2" required>
+                                    <p class="text-xs text-neutral-lighter mt-1">Numéro SIRET de votre entreprise.</p>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="overflow-x-auto mt-8">
-                            <table class="min-w-full text-sm">
-                                <thead class="bg-table-header">
-                                    <tr>
-                                        <th class="py-2 px-4 font-semibold text-left text-table-header">Désignation</th>
-                                        <th class="py-2 px-4 font-semibold text-right text-table-header">Prix HT (€)</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr class="border-b border-card">
-                                        <td class="py-3 px-4">Geste Commercial</td>
-                                        <td id="preview-amount-ht" class="py-3 px-4 text-right"></td>
-                                    </tr>
-                                </tbody>
-                                <tfoot class="font-semibold">
-                                    <tr>
-                                        <td class="py-2 px-4 text-right">Sous-total Hors Taxes</td>
-                                        <td id="preview-subtotal" class="py-2 px-4 text-right"></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-2 px-4 text-right">TVA (20%)</td>
-                                        <td id="preview-tva" class="py-2 px-4 text-right"></td>
-                                    </tr>
-                                    <tr class="bg-table-total text-base">
-                                        <td class="py-3 px-4 text-right text-table-total">TOTAL TTC</td>
-                                        <td id="preview-total" class="py-3 px-4 text-right text-table-total"></td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                         
-                        <div class="text-right pt-8">
-                            <p class="text-sm text-neutral-medium mb-2">Signature du Client :</p>
-                            <img id="preview-signature-image" class="w-48 h-24 object-contain mx-auto mb-2 border border-divider" style="display: none;">
-                            <p class="font-semibold" id="preview-signer-name"></p>
-                            <p class="text-sm text-neutral-medium" id="preview-signer-title"></p>
+                        <div>
+                            <h3 class="text-xl font-semibold border-b border-divider pb-2 mb-4 text-neutral-dark">Montant du Geste Commercial</h3>
+                            <div>
+                                <label for="amount-ht" class="block text-sm font-medium text-neutral-medium">Montant Hors Taxes *</label>
+                                <div class="relative mt-1 rounded-md shadow-sm">
+                                    <input type="number" id="amount-ht" value="100.00" step="0.01" class="block w-full rounded-md border-card pr-12 focus:border-vistalid-blue focus:ring-vistalid-blue sm:text-sm p-2" required>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                                        <span class="text-neutral-lighter sm:text-sm">€</span>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-neutral-lighter mt-1">Indiquez le montant du geste commercial hors taxes.</p>
+                            </div>
                         </div>
 
-                        <div class="text-center pt-6 text-xs text-neutral-lighter">
-                            <p class="font-semibold">VISTALID</p>
-                            <p>SIRET 123 456 789 00010 - RCS Bordeaux - Capital Social 1000€</p>
+                        <div>
+                            <h3 class="text-xl font-semibold border-b border-divider pb-2 mb-4 text-neutral-dark">Signature du Client</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="signer-name" class="block text-sm font-medium text-neutral-medium">Nom du signataire *</label>
+                                    <input type="text" id="signer-name" placeholder="Votre Nom et Prénom" class="mt-1 block w-full rounded-md border-card shadow-sm focus:border-vistalid-blue focus:ring-vistalid-blue sm:text-sm p-2" required>
+                                    <p class="text-xs text-neutral-lighter mt-1">Nom complet de la personne qui signe.</p>
+                                </div>
+                                <div>
+                                    <label for="signer-title" class="block text-sm font-medium text-neutral-medium">Votre Fonction *</label>
+                                    <select id="signer-title" class="mt-1 block w-full rounded-md border-card shadow-sm focus:border-vistalid-blue focus:ring-vistalid-blue sm:text-sm p-2" required>
+                                        <option value="">Sélectionnez une fonction</option>
+                                        <option value="Gérant">Gérant</option>
+                                        <option value="Gérante">Gérante</option>
+                                    </select>
+                                    <p class="text-xs text-neutral-lighter mt-1">Sélectionnez votre fonction au sein de l'entreprise.</p>
+                                </div>
+                                <div class="border border-divider rounded-md p-2 bg-card">
+                                    <label class="block text-sm font-medium text-neutral-medium mb-2">Dessinez votre signature ici : *</label>
+                                    <canvas id="signature-pad" class="w-full h-32"></canvas>
+                                    <p class="text-xs text-neutral-lighter mt-1">Utilisez votre souris ou votre doigt pour dessiner votre signature.</p>
+                                    <button type="button" id="clear-signature" class="mt-2 px-3 py-1 bg-red-500 text-white text-xs font-semibold rounded-md hover:bg-red-600 transition">Effacer la signature</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </section>
+            </div>
+
+            <!-- Preview Section -->
+            <div class="flex flex-col">
+                <div class="section-banner secondary">Aperçu de la facture</div>
+                <section id="preview-section" class="h-full">
+                     <div id="preview-document" class="bg-card p-8 sm:p-10 lg:p-12 rounded-2xl shadow-lg h-full border border-card sticky top-8">
+                        <div class="space-y-6">
+                            
+                            <h2 class="text-2xl font-bold text-neutral-dark text-center">FACTURE / GESTE COMMERCIAL</h2>
+                            <p class="text-neutral-medium font-medium text-center">Numéro : <span id="preview-invoice-number"></span></p>
+
+                            <hr class="my-6 border-divider">
+                            
+                            <div class="grid grid-cols-2 gap-8">
+                                <div>
+                                    <h3 class="font-semibold text-neutral-dark">VISTALID</h3>
+                                    <p class="text-sm text-neutral-medium mt-1">
+                                        210 COURS VICTOR HUGO<br>
+                                        33130 BEGLES
+                                    </p>
+                                </div>
+                                <div class="text-right">
+                                     <p class="text-sm text-neutral-medium"><span class="font-semibold">Date d'émission :</span> <span id="preview-issue-date"></span></p>
+                                     <p class="text-sm text-neutral-medium"><span class="font-semibold">Lieu d'émission :</span> <span id="preview-issue-place"></span></p>
+                                </div>
+                            </div>
+
+                            <hr class="my-6 border-divider">
+
+                            <div>
+                                <h3 class="font-semibold text-neutral-dark">CLIENT :</h3>
+                                <div class="mt-1 text-sm text-neutral-medium">
+                                    <p id="preview-client-name" class="font-bold"></p>
+                                    <p id="preview-client-address" class="whitespace-pre-line"></p>
+                                    <p id="preview-client-siret" class="mt-1"></p>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto mt-8">
+                                <table class="min-w-full text-sm">
+                                    <thead class="bg-table-header">
+                                        <tr>
+                                            <th class="py-2 px-4 font-semibold text-left text-table-header">Désignation</th>
+                                            <th class="py-2 px-4 font-semibold text-right text-table-header">Prix HT (€)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="border-b border-card">
+                                            <td class="py-3 px-4">Geste Commercial</td>
+                                            <td id="preview-amount-ht" class="py-3 px-4 text-right"></td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot class="font-semibold">
+                                        <tr>
+                                            <td class="py-2 px-4 text-right">Sous-total Hors Taxes</td>
+                                            <td id="preview-subtotal" class="py-2 px-4 text-right"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="py-2 px-4 text-right">TVA (20%)</td>
+                                            <td id="preview-tva" class="py-2 px-4 text-right"></td>
+                                        </tr>
+                                        <tr class="bg-table-total text-base">
+                                            <td class="py-3 px-4 text-right text-table-total">TOTAL TTC</td>
+                                            <td id="preview-total" class="py-3 px-4 text-right text-table-total"></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                             
+                            <div class="text-right pt-8">
+                                <p class="text-sm text-neutral-medium mb-2">Signature du Client :</p>
+                                <img id="preview-signature-image" class="w-48 h-24 object-contain mx-auto mb-2 border border-divider" style="display: none;">
+                                <p class="font-semibold" id="preview-signer-name"></p>
+                                <p class="text-sm text-neutral-medium" id="preview-signer-title"></p>
+                            </div>
+
+                            <div class="text-center pt-6 text-xs text-neutral-lighter">
+                                <p class="font-semibold">VISTALID</p>
+                                <p>SIRET 123 456 789 00010 - RCS Bordeaux - Capital Social 1000€</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </section>
+                </section>
+            </div>
         </div>
         
         <div id="actions-section" class="mt-8 flex justify-center items-center gap-4">
@@ -482,10 +577,18 @@
                 const formSection = document.getElementById('form-section');
                 const headerSection = document.getElementById('header-section');
                 const actionsSection = document.getElementById('actions-section');
-                
+                const sectionBanners = document.querySelectorAll('.section-banner'); /* Select all banners */
+
                 const originalFormDisplay = formSection.style.display;
                 const originalHeaderDisplay = headerSection.style.display;
                 const originalActionsDisplay = actionsSection.style.display;
+                
+                // Store original display for banners and hide them
+                const originalBannerDisplays = [];
+                sectionBanners.forEach(banner => {
+                    originalBannerDisplays.push(banner.style.display);
+                    banner.style.display = 'none';
+                });
 
                 formSection.style.display = 'none';
                 headerSection.style.display = 'none';
@@ -534,6 +637,10 @@
                 formSection.style.display = originalFormDisplay;
                 headerSection.style.display = originalHeaderDisplay;
                 actionsSection.style.display = originalActionsDisplay;
+                // Restore original display for banners
+                sectionBanners.forEach((banner, index) => {
+                    banner.style.display = originalBannerDisplays[index];
+                });
             });
         });
     </script>

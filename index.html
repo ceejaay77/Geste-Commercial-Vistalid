@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur d'Avoir / Geste Commercial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- jsPDF library for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Chosen Palette: Calm Professional -->
+    <!-- Application Structure Plan: A two-panel SPA. The left panel contains a streamlined form for general invoice details (number, date, place), client information, the commercial gesture amount, and a new interactive signature pad. The right panel provides a real-time, clean preview of the "Avoir / Geste Commercial" document, structured like a standard invoice, now including the drawn signature. This design prioritizes efficiency and clarity for generating formal financial documents, offering a personalized touch. A download function allows for easy PDF generation. -->
+    <!-- Visualization & Content Choices: Report Info (invoice template) -> Goal (generate a formal commercial gesture invoice with client signature) -> Presentation (HTML form + live invoice preview div, including a signature canvas) -> Interaction (oninput/onchange events update financial calculations and textual fields in real-time; mouse/touch events enable drawing on signature canvas) -> Justification (Provides a quick, accurate, and visually standard way to create commercial gesture invoices, focusing on financial clarity and adding a personal, verifiable touch via signature) -> Library/Method (Vanilla JS, Tailwind CSS, jsPDF for PDF generation, html2canvas for capturing signature canvas). -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            #form-section, #header-section, #actions-section {
+                display: none !important;
+            }
+            #preview-section {
+                width: 100% !important;
+                height: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+                background-color: white !important;
+            }
+            #preview-document {
+                 box-shadow: none !important;
+                 border: none !important;
+                 height: auto;
+            }
+            main {
+                padding: 0 !important;
+                background-color: white !important;
+            }
+        }
+        #signature-pad {
+            border: 1px solid #ccc;
+            border-radius: 0.5rem;
+            background-color: #f9f9f9;
+            touch-action: none; /* Prevent scrolling on touch devices */
+        }
+    </style>
+</head>
+<body class="bg-stone-100 text-stone-800">
+
+    <main class="min-h-screen p-4 sm:p-6 lg:p-8">
+        <div class="max-w-7xl mx-auto">
+            
+            <header id="header-section" class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-stone-900">Générateur d'Avoir / Geste Commercial</h1>
+                <p class="mt-2 text-stone-600">Remplissez les champs pour générer votre document d'avoir.</p>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                <!-- Form Section -->
+                <section id="form-section" class="bg-white p-6 rounded-2xl shadow-lg">
+                    <form id="invoice-form" class="space-y-6">
+                        
+                        <div>
+                            <h2 class="text-xl font-semibold border-b pb-2 mb-4 text-stone-700">Informations de l'Avoir</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="invoice-number" class="block text-sm font-medium text-stone-600">Numéro de l'Avoir</label>
+                                    <input type="text" id="invoice-number" value="AVOIR-2025-001" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2">
+                                </div>
+                                <div>
+                                    <label for="issue-date" class="block text-sm font-medium text-stone-600">Date d'émission</label>
+                                    <input type="date" id="issue-date" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2">
+                                </div>
+                                 <div>
+                                    <label for="issue-place" class="block text-sm font-medium text-stone-600">Lieu d'émission</label>
+                                    <input type="text" id="issue-place" placeholder="Ville" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h2 class="text-xl font-semibold border-b pb-2 mb-4 text-stone-700">Vos Informations Client</h2>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="client-name" class="block text-sm font-medium text-stone-600">Votre nom de société</label>
+                                    <input type="text" id="client-name" placeholder="Votre nom d'entreprise" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2">
+                                </div>
+                                <div>
+                                    <label for="client-address" class="block text-sm font-medium text-stone-600">Votre adresse complète</label>
+                                    <textarea id="client-address" rows="3" placeholder="123 Rue de l'Exemple&#10;75001 Paris" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2"></textarea>
+                                </div>
+                                <div>
+                                    <label for="client-legal" class="block text-sm font-medium text-stone-600">Vos infos légales (SIRET, TVA...)</label>
+                                    <input type="text" id="client-legal" placeholder="SIRET : 123 456 789 00012" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h2 class="text-xl font-semibold border-b pb-2 mb-4 text-stone-700">Montant du Geste Commercial</h2>
+                            <div>
+                                <label for="amount-ht" class="block text-sm font-medium text-stone-600">Montant Hors Taxes</label>
+                                <div class="relative mt-1 rounded-md shadow-sm">
+                                    <input type="number" id="amount-ht" value="100.00" step="0.01" class="block w-full rounded-md border-stone-300 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2">
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                                        <span class="text-gray-500 sm:text-sm">€</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h2 class="text-xl font-semibold border-b pb-2 mb-4 text-stone-700">Signature du Client</h2>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="signer-name" class="block text-sm font-medium text-stone-600">Nom du signataire</label>
+                                    <input type="text" id="signer-name" placeholder="Votre Nom et Prénom" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2">
+                                </div>
+                                <div>
+                                    <label for="signer-title" class="block text-sm font-medium text-stone-600">Votre Fonction</label>
+                                    <input type="text" id="signer-title" placeholder="Ex: Directeur Général" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2">
+                                </div>
+                                <div class="border border-stone-300 rounded-md p-2 bg-stone-50">
+                                    <label class="block text-sm font-medium text-stone-600 mb-2">Dessinez votre signature ici :</label>
+                                    <canvas id="signature-pad" class="w-full h-32"></canvas>
+                                    <button type="button" id="clear-signature" class="mt-2 px-3 py-1 bg-red-500 text-white text-xs font-semibold rounded-md hover:bg-red-600 transition">Effacer la signature</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- Preview Section -->
+                <section id="preview-section" class="h-full">
+                     <div id="preview-document" class="bg-white p-8 sm:p-10 lg:p-12 rounded-2xl shadow-lg h-full border border-stone-200 sticky top-8">
+                        <div class="space-y-6">
+                            <h2 class="text-2xl font-bold text-stone-900 text-center">AVOIR / GESTE COMMERCIAL</h2>
+                            <p class="text-stone-700 font-medium text-center">Numéro : <span id="preview-invoice-number"></span></p>
+
+                            <hr class="my-6">
+                            
+                            <div class="grid grid-cols-2 gap-8">
+                                <div>
+                                    <h3 class="font-semibold text-stone-800">VISTALID</h3>
+                                    <p class="text-sm text-stone-600 mt-1">
+                                        210 COURS VICTOR HUGO<br>
+                                        33130 BEGLES
+                                    </p>
+                                </div>
+                                <div class="text-right">
+                                     <p class="text-sm text-stone-600"><span class="font-semibold">Date d'émission :</span> <span id="preview-issue-date"></span></p>
+                                     <p class="text-sm text-stone-600"><span class="font-semibold">Lieu d'émission :</span> <span id="preview-issue-place"></span></p>
+                                </div>
+                            </div>
+
+                            <hr class="my-6">
+
+                            <div>
+                                <h3 class="font-semibold text-stone-800">CLIENT :</h3>
+                                <div class="mt-1 text-sm text-stone-600">
+                                    <p id="preview-client-name" class="font-bold"></p>
+                                    <p id="preview-client-address" class="whitespace-pre-line"></p>
+                                    <p id="preview-client-legal" class="mt-1"></p>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto mt-8">
+                                <table class="min-w-full text-sm">
+                                    <thead class="bg-stone-100">
+                                        <tr>
+                                            <th class="py-2 px-4 font-semibold text-left text-stone-700">Désignation</th>
+                                            <th class="py-2 px-4 font-semibold text-right text-stone-700">Prix HT (€)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="border-b">
+                                            <td class="py-3 px-4">Geste Commercial</td>
+                                            <td id="preview-amount-ht" class="py-3 px-4 text-right"></td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot class="font-semibold">
+                                        <tr>
+                                            <td class="py-2 px-4 text-right">Sous-total Hors Taxes</td>
+                                            <td id="preview-subtotal" class="py-2 px-4 text-right"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="py-2 px-4 text-right">TVA (20%)</td>
+                                            <td id="preview-tva" class="py-2 px-4 text-right"></td>
+                                        </tr>
+                                        <tr class="bg-stone-100 text-base">
+                                            <td class="py-3 px-4 text-right">TOTAL TTC</td>
+                                            <td id="preview-total" class="py-3 px-4 text-right"></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                             
+                            <div class="text-right pt-8">
+                                <img id="preview-signature-image" class="w-48 h-24 object-contain mx-auto mb-2" style="display: none;">
+                                <p class="font-semibold" id="preview-signer-name"></p>
+                                <p class="text-sm text-stone-600" id="preview-signer-title"></p>
+                            </div>
+
+                            <div class="text-center pt-6 text-xs text-stone-500">
+                                <p class="font-semibold">VISTALID</p>
+                                <p>SIRET 123 456 789 00010 - RCS Bordeaux - Capital Social 1000€</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+            
+            <div id="actions-section" class="mt-8 flex justify-center items-center gap-4">
+                <button type="button" id="download-pdf-button" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
+                    Télécharger le PDF
+                </button>
+                 <button type="reset" form="invoice-form" class="px-6 py-3 bg-stone-200 text-stone-700 font-semibold rounded-lg hover:bg-stone-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-stone-500 transition">
+                    Réinitialiser
+                </button>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('invoice-form');
+            const TVA_RATE = 0.20;
+
+            const fields = {
+                invoiceNumber: document.getElementById('invoice-number'),
+                issueDate: document.getElementById('issue-date'),
+                issuePlace: document.getElementById('issue-place'),
+                clientName: document.getElementById('client-name'),
+                clientAddress: document.getElementById('client-address'),
+                clientLegal: document.getElementById('client-legal'),
+                amountHT: document.getElementById('amount-ht'),
+                signerName: document.getElementById('signer-name'),
+                signerTitle: document.getElementById('signer-title'),
+            };
+
+            const preview = {
+                invoiceNumber: document.getElementById('preview-invoice-number'),
+                issueDate: document.getElementById('preview-issue-date'),
+                issuePlace: document.getElementById('preview-issue-place'),
+                clientName: document.getElementById('preview-client-name'),
+                clientAddress: document.getElementById('preview-client-address'),
+                clientLegal: document.getElementById('preview-client-legal'),
+                amountHT: document.getElementById('preview-amount-ht'),
+                subtotal: document.getElementById('preview-subtotal'),
+                tva: document.getElementById('preview-tva'),
+                total: document.getElementById('preview-total'),
+                signerName: document.getElementById('preview-signer-name'),
+                signerTitle: document.getElementById('preview-signer-title'),
+                signatureImage: document.getElementById('preview-signature-image'),
+            };
+
+            const signaturePadCanvas = document.getElementById('signature-pad');
+            const signaturePadCtx = signaturePadCanvas.getContext('2d');
+            let isDrawing = false;
+            let lastX = 0;
+            let lastY = 0;
+
+            function setupSignaturePad() {
+                // Set canvas resolution for better quality on high-DPI screens
+                const dpi = window.devicePixelRatio || 1;
+                signaturePadCanvas.width = signaturePadCanvas.offsetWidth * dpi;
+                signaturePadCanvas.height = signaturePadCanvas.offsetHeight * dpi;
+                signaturePadCtx.scale(dpi, dpi);
+                signaturePadCtx.lineWidth = 2;
+                signaturePadCtx.lineCap = 'round';
+                signaturePadCtx.strokeStyle = '#000';
+                signaturePadCtx.fillStyle = '#f9f9f9'; // Match background
+                signaturePadCtx.fillRect(0, 0, signaturePadCanvas.width, signaturePadCanvas.height); // Fill background
+
+                function getCoords(e) {
+                    const rect = signaturePadCanvas.getBoundingClientRect();
+                    if (e.touches && e.touches.length > 0) {
+                        return {
+                            x: (e.touches[0].clientX - rect.left) / dpi,
+                            y: (e.touches[0].clientY - rect.top) / dpi
+                        };
+                    }
+                    return {
+                        x: (e.clientX - rect.left) / dpi,
+                        y: (e.clientY - rect.top) / dpi
+                    };
+                }
+
+                function startDrawing(e) {
+                    isDrawing = true;
+                    [lastX, lastY] = [getCoords(e).x, getCoords(e).y];
+                    signaturePadCtx.beginPath();
+                    signaturePadCtx.moveTo(lastX, lastY);
+                }
+
+                function draw(e) {
+                    if (!isDrawing) return;
+                    e.preventDefault(); // Prevent scrolling on touch
+                    const { x, y } = getCoords(e);
+                    signaturePadCtx.lineTo(x, y);
+                    signaturePadCtx.stroke();
+                    [lastX, lastY] = [x, y];
+                }
+
+                function stopDrawing() {
+                    isDrawing = false;
+                    updateSignaturePreview();
+                }
+
+                signaturePadCanvas.addEventListener('mousedown', startDrawing);
+                signaturePadCanvas.addEventListener('mousemove', draw);
+                signaturePadCanvas.addEventListener('mouseup', stopDrawing);
+                signaturePadCanvas.addEventListener('mouseout', stopDrawing); // Stop drawing if mouse leaves canvas
+
+                signaturePadCanvas.addEventListener('touchstart', startDrawing, { passive: false });
+                signaturePadCanvas.addEventListener('touchmove', draw, { passive: false });
+                signaturePadCanvas.addEventListener('touchend', stopDrawing);
+                signaturePadCanvas.addEventListener('touchcancel', stopDrawing);
+
+                document.getElementById('clear-signature').addEventListener('click', clearSignature);
+            }
+
+            function clearSignature() {
+                signaturePadCtx.clearRect(0, 0, signaturePadCanvas.width, signaturePadCanvas.height);
+                signaturePadCtx.fillStyle = '#f9f9f9'; // Re-fill background
+                signaturePadCtx.fillRect(0, 0, signaturePadCanvas.width, signaturePadCanvas.height);
+                preview.signatureImage.style.display = 'none';
+                preview.signatureImage.src = '';
+            }
+
+            function updateSignaturePreview() {
+                if (!signaturePadCanvas.getContext('2d').getImageData(0, 0, signaturePadCanvas.width, signaturePadCanvas.height).data.some(channel => channel !== 0)) {
+                    // Canvas is empty
+                    preview.signatureImage.style.display = 'none';
+                    preview.signatureImage.src = '';
+                } else {
+                    preview.signatureImage.src = signaturePadCanvas.toDataURL();
+                    preview.signatureImage.style.display = 'block';
+                }
+            }
+
+            function formatCurrency(value) {
+                const number = parseFloat(value);
+                return isNaN(number) ? '0,00' : number.toFixed(2);
+            }
+
+            function formatDate(dateString) {
+                if (!dateString) return '';
+                const date = new Date(dateString);
+                const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
+                return date.toLocaleDateString('fr-FR', options);
+            }
+
+            function updatePreview() {
+                const ht = parseFloat(fields.amountHT.value) || 0;
+                const tva = ht * TVA_RATE;
+                const ttc = ht + tva;
+                
+                preview.invoiceNumber.textContent = fields.invoiceNumber.value || 'AVOIR-XXXX-XXX';
+                preview.issueDate.textContent = formatDate(fields.issueDate.value);
+                preview.issuePlace.textContent = fields.issuePlace.value || 'Ville';
+                preview.clientName.textContent = fields.clientName.value || 'Votre nom de société';
+                preview.clientAddress.textContent = fields.clientAddress.value || 'Votre adresse complète';
+                preview.clientLegal.textContent = fields.clientLegal.value || 'Vos infos légales';
+                
+                preview.amountHT.textContent = formatCurrency(ht);
+                preview.subtotal.textContent = formatCurrency(ht);
+                preview.tva.textContent = formatCurrency(tva);
+                preview.total.textContent = formatCurrency(ttc);
+
+                preview.signerName.textContent = fields.signerName.value || '';
+                preview.signerTitle.textContent = fields.signerTitle.value || '';
+                
+                updateSignaturePreview(); // Update signature image in preview
+            }
+
+            // Set today's date by default
+            const today = new Date().toISOString().split('T')[0];
+            fields.issueDate.value = today;
+            
+            // Initial setup and update
+            setupSignaturePad();
+            updatePreview();
+
+            // Event Listeners
+            form.addEventListener('input', updatePreview);
+            form.addEventListener('change', updatePreview);
+
+            form.addEventListener('reset', () => {
+                setTimeout(() => {
+                    fields.issueDate.value = today; // Reset date to today
+                    fields.issuePlace.value = ''; // Clear lieu d'émission on reset
+                    clearSignature(); // Clear signature on reset
+                    updatePreview();
+                }, 0); // Update after reset
+            });
+
+            document.getElementById('download-pdf-button').addEventListener('click', async () => {
+                const { jsPDF } = window.jspdf;
+                const element = document.getElementById('preview-document');
+                
+                // Temporarily hide actions and form for clean PDF generation
+                const formSection = document.getElementById('form-section');
+                const headerSection = document.getElementById('header-section');
+                const actionsSection = document.getElementById('actions-section');
+                const originalFormDisplay = formSection.style.display;
+                const originalHeaderDisplay = headerSection.style.display;
+                const originalActionsDisplay = actionsSection.style.display;
+
+                formSection.style.display = 'none';
+                headerSection.style.display = 'none';
+                actionsSection.style.display = 'none';
+
+                const doc = new jsPDF('p', 'pt', 'a4'); 
+                
+                const margin = 20; 
+                const scaleFactor = 0.75; 
+
+                doc.html(element, {
+                    callback: function (doc) {
+                        doc.save('Geste_Commercial.pdf');
+                        // Restore original displays
+                        formSection.style.display = originalFormDisplay;
+                        headerSection.style.display = originalHeaderDisplay;
+                        actionsSection.style.display = originalActionsDisplay;
+                    },
+                    x: margin,
+                    y: margin,
+                    html2canvas: {
+                        scale: scaleFactor,
+                        width: element.offsetWidth, 
+                        windowWidth: element.scrollWidth, 
+                    },
+                });
+            });
+        });
+    </script>
+</body>
+</html>
